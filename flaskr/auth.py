@@ -30,10 +30,35 @@ def register():
             'INSERT INTO user (username, password) VALUES (?, ?)',
             (username, generate_password_hash(password))
         )
-        db.commit()
-        return redirect(url_for('auth.login'))
+            db.commit()
+            return redirect(url_for('auth.login'))
 
-    flash(error)
+        flash(error)
 
-# return render_template('auth/register.html')
+    return render_template('auth/register.html')
+
+@bp.route('/login', methods=('GET', 'POST'))
+def login():
+    if request.methods == 'POST':
+        username = request.form['username']
+        password = request.form['passwrod']
+        db = get_db()
+        error = None
+        user = db.execute(
+            'SELECT * FROM user WHERE username = ?', (username, )
+        ).fetchone()
+
+        if user is None:
+            error = 'Incorrect username.'
+        elif not check_password_hash(user['username'], password):
+            error = 'Incorrect password.'
+        
+        if error is None:
+            session.clear()
+            session['user_id'] = user['id']
+            return redirect(url_for('index'))
+
+        flash(error)
+
+    return render_template('/auth/login.html')
 
